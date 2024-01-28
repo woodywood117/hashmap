@@ -3,6 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Entry {
+    char *key;
+    void *value;
+    int freeable;
+    struct Entry *next;
+} Entry;
+
+typedef struct Hashmap {
+    int size;
+    Entry **entries;
+} Hashmap;
+
 int hash(char *key, int size) {
     int hash = 0;
     for (int i = 0; i < strlen(key); i++) {
@@ -36,18 +48,7 @@ void hashmap_resize(Hashmap *map, int size) {
 }
 
 void hashmap_destroy(Hashmap *map) {
-    for (int i = 0; i < map->size; i++) {
-        Entry *e = map->entries[i];
-        while (e != NULL) {
-            Entry *next = e->next;
-            free(e->key);
-            if (e->freeable) {
-                free(e->value);
-            }
-            free(e);
-            e = next;
-        }
-    }
+    hashmap_clear(map);
     free(map->entries);
     free(map);
 }
@@ -109,5 +110,37 @@ void hashmap_remove(Hashmap *map, char *key) {
         }
         prev = e;
         e = e->next;
+    }
+}
+
+int hashmap_size(Hashmap *map) {
+    return map->size;
+}
+
+int hashmap_length(Hashmap *map) {
+    int len = 0;
+    for (int i = 0; i < map->size; i++) {
+        Entry *e = map->entries[i];
+        while (e != NULL) {
+            len++;
+            e = e->next;
+        }
+    }
+    return len;
+}
+
+void hashmap_clear(Hashmap *map) {
+    for (int i = 0; i < map->size; i++) {
+        Entry *e = map->entries[i];
+        while (e != NULL) {
+            Entry *next = e->next;
+            free(e->key);
+            if (e->freeable) {
+                free(e->value);
+            }
+            free(e);
+            e = next;
+        }
+        map->entries[i] = NULL;
     }
 }
